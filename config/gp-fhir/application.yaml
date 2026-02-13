@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://gp-db:5432/hapi
+    username: hapi
+    password: hapi
+    driverClassName: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: ca.uhn.fhir.jpa.model.dialect.HapiFhirPostgresDialect
+
+hapi:
+  fhir:
+    fhir_version: R5
+    server_address: http://localhost:8082/fhir
+    allow_multiple_delete: true
+    reuse_cached_search_results_millis: -1
+    tester:
+      home:
+        name: GP FHIR Server
+        server_address: http://localhost:8080/fhir
+        fhir_version: R5

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status - HIS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>HIS</strong> - Hospital Information System
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">System Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <tr>
+                        <td>Matrix Connection</td>
+                        <td>
+                            <span th:if="${matrixConnected}" class="badge bg-success">Connected</span>
+                            <span th:unless="${matrixConnected}" class="badge bg-danger">Disconnected</span>
+                        </td>
+                    </tr>
+                    <tr th:if="${matrixRoomId}">
+                        <td>Matrix Room ID</td>
+                        <td><code th:text="${matrixRoomId}"></code></td>
+                    </tr>
+                </table>
+                <a href="/" class="btn btn-outline-primary">Back to Home</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

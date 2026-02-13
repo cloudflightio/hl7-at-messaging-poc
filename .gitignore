@@ -1,0 +1,21 @@
+# Build outputs
+**/target/
+**/*.jar
+**/*.class
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Generated files
+config/synapse/*.signing.key
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db

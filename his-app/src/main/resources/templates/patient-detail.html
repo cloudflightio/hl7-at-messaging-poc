@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Detail - HIS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>HIS</strong> - Hospital Information System
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/patients">Patients</a></li>
+                <li class="breadcrumb-item active">Patient Detail</li>
+            </ol>
+        </nav>
+
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">
+                    <span th:if="${patient.hasName() and !patient.name.isEmpty()}">
+                        <span th:each="given : ${patient.name[0].given}" th:text="${given.value} + ' '"></span>
+                        <span th:text="${patient.name[0].family}"></span>
+                    </span>
+                    <span th:unless="${patient.hasName() and !patient.name.isEmpty()}">Unknown Patient</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr th:if="${patient.hasBirthDate()}">
+                                <td class="text-muted">Birth Date</td>
+                                <td th:text="${patient.birthDateElement.valueAsString}"></td>
+                            </tr>
+                            <tr th:if="${patient.hasGender()}">
+                                <td class="text-muted">Gender</td>
+                                <td th:text="${patient.gender.display}"></td>
+                            </tr>
+                            <tr th:if="${patient.hasIdentifier() and !patient.identifier.isEmpty()}">
+                                <td class="text-muted">Identifier</td>
+                                <td th:text="${patient.identifier[0].value}"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">FHIR ID</td>
+                                <td><code th:text="${patient.idElement.idPart}"></code></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex gap-2">
+                    <a th:href="@{/documents/create(patientId=${patient.idElement.idPart})}"
+                       class="btn btn-primary">Send Document</a>
+                    <a href="/patients" class="btn btn-outline-secondary">Back to Patients</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

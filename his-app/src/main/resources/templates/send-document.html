@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Document - HIS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>HIS</strong> - Hospital Information System
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active">Send Document</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Send Document to GP</h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/documents/send}" method="post" enctype="multipart/form-data">
+                            <input type="hidden" name="patientId" th:value="${patientId}">
+
+                            <!-- Patient Info -->
+                            <div class="alert alert-info">
+                                <strong>Patient:</strong>
+                                <span th:if="${patient.hasName() and !patient.name.isEmpty()}">
+                                    <span th:each="given : ${patient.name[0].given}" th:text="${given.value} + ' '"></span>
+                                    <span th:text="${patient.name[0].family}"></span>
+                                </span>
+                                <span th:if="${patient.hasBirthDate()}" class="ms-3">
+                                    | Born: <span th:text="${patient.birthDateElement.valueAsString}"></span>
+                                </span>
+                            </div>
+
+                            <!-- Document Title -->
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Document Title</label>
+                                <input type="text" class="form-control" id="title" name="title"
+                                       placeholder="e.g., Nursing Document"
+                                       value="Nursing Document" required>
+                            </div>
+
+                            <!-- PDF File Upload -->
+                            <div class="mb-3">
+                                <label for="pdfFile" class="form-label">PDF Document</label>
+                                <input type="file" class="form-control" id="pdfFile" name="pdfFile"
+                                       accept="application/pdf" required>
+                                <div class="form-text">Select a PDF file to upload (max 10MB)</div>
+                            </div>
+
+                            <!-- Recipient Info -->
+                            <div class="mb-3">
+                                <label class="form-label">Recipient</label>
+                                <input type="text" class="form-control" value="Dr. Huber - General Practitioner"
+                                       readonly disabled>
+                                <div class="form-text">Messages will be sent to the GP via Matrix protocol</div>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    Send Document
+                                </button>
+                                <a href="/" class="btn btn-outline-secondary">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">What happens next?</h6>
+                    </div>
+                    <div class="card-body">
+                        <ol class="small text-muted ps-3 mb-0">
+                            <li class="mb-2">Your PDF is encoded as base64 in a FHIR DocumentReference</li>
+                            <li class="mb-2">An ATMessagingBundle is created with MessageHeader, Endpoints, Practitioner, Patient, and DocumentReference</li>
+                            <li class="mb-2">The message is sent via Matrix protocol to the GP room</li>
+                            <li class="mb-2">GP application receives and stores the message</li>
+                            <li>GP can view and download the PDF in their inbox</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">FHIR Message Structure</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="small bg-light p-2 rounded mb-0"><code>Bundle (type: message)
+├── MessageHeader
+│   ├── event: document
+│   ├── definition: ATMessagingDocumentMessageDefinition
+│   ├── source: HIS Endpoint
+│   └── destination: GP Endpoint + Receiver
+├── Endpoint (HIS)
+├── Endpoint (GP)
+├── Practitioner (Receiver)
+├── Patient
+└── DocumentReference
+    └── content (PDF, base64)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

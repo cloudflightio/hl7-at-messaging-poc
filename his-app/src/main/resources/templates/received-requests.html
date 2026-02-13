@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Received Requests - Hospital Information System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .status-badge { font-size: 0.75rem; }
+        .request-row { cursor: pointer; }
+        .request-row:hover { background-color: #f8f9fa; }
+    </style>
+</head>
+<body class="bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <strong>HIS</strong> - Hospital Information System
+        </a>
+        <div class="navbar-nav ms-auto">
+            <span class="navbar-text">
+                <span th:if="${matrixConnected}" class="badge bg-success status-badge">Matrix Connected</span>
+                <span th:unless="${matrixConnected}" class="badge bg-danger status-badge">Matrix Disconnected</span>
+            </span>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0">Received Consult Requests</h5>
+                        <small class="text-muted" th:text="${requestCount} + ' request(s) from GP'"></small>
+                    </div>
+                    <a href="/" class="btn btn-outline-primary btn-sm">Back to Home</a>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(requests)}" class="text-center text-muted py-5">
+                        <h6>No requests yet</h6>
+                        <p class="small">CommunicationRequest messages from the GP will appear here</p>
+                    </div>
+                    <div th:unless="${#lists.isEmpty(requests)}" class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                            <tr>
+                                <th>From</th>
+                                <th>Patient</th>
+                                <th>Request</th>
+                                <th>Status</th>
+                                <th>Received</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="req, iterStat : ${requests}" class="request-row"
+                                data-bs-toggle="modal" data-bs-target="#requestModal"
+                                th:data-id="${req.id}"
+                                th:data-index="${iterStat.index}"
+                                th:data-source="${req.sourceName}"
+                                th:data-requester="${req.requesterName}"
+                                th:data-patient="${req.patientName}"
+                                th:data-patientdob="${req.patientBirthDate}"
+                                th:data-description="${req.requestDescription}"
+                                th:data-status="${req.requestStatus}"
+                                th:data-priority="${req.requestPriority}"
+                                th:data-received="${#dates.format(req.receivedAt, 'dd.MM.yyyy HH:mm:ss')}">
+                                <td>
+                                    <span th:text="${req.sourceName}">Source</span>
+                                    <br>
+                                    <small class="text-muted" th:text="${req.requesterName}">Requester</small>
+                                </td>
+                                <td>
+                                    <span th:text="${req.patientName}">Patient Name</span>
+                                    <br th:if="${req.patientBirthDate}"/>
+                                    <small th:if="${req.patientBirthDate}" class="text-muted"
+                                           th:text="'Born: ' + ${req.patientBirthDate}"></small>
+                                </td>
+                                <td>
+                                    <span th:text="${#strings.abbreviate(req.requestDescription, 50)}"
+                                          class="text-truncate d-inline-block" style="max-width: 200px;">Request</span>
+                                </td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${req.requestStatus == 'active'} ? 'bg-warning' : 'bg-secondary'"
+                                          th:text="${req.requestStatus}">Status</span>
+                                    <br th:if="${req.requestPriority}"/>
+                                    <small th:if="${req.requestPriority}" class="text-muted"
+                                           th:text="'Priority: ' + ${req.requestPriority}"></small>
+                                </td>
+                                <td>
+                                    <span th:text="${#dates.format(req.receivedAt, 'dd.MM.yyyy')}">Date</span>
+                                    <br>
+                                    <small class="text-muted"
+                                           th:text="${#dates.format(req.receivedAt, 'HH:mm:ss')}">Time</small>
+                                </td>
+                                <td onclick="event.stopPropagation();">
+                                    <a th:href="@{/requests/{id}/reply(id=${req.id})}"
+                                       class="btn btn-sm btn-primary">
+                                        Reply
+                                    </a>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">About Received Requests</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted mb-2">
+                        These are <strong>CommunicationRequest</strong> messages received from the
+                        General Practitioner requesting consultation documents.
+                    </p>
+                    <hr>
+                    <p class="small mb-1"><strong>Message Details:</strong></p>
+                    <ul class="small text-muted ps-3 mb-0">
+                        <li>Event type: <code>request</code></li>
+                        <li>Follows AT Messaging IG</li>
+                        <li>Received via Matrix protocol</li>
+                        <li>Contains patient reference</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0">Quick Links</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="/" class="list-group-item list-group-item-action">
+                        Home - Patient List
+                    </a>
+                    <a href="http://localhost:3002" target="_blank" class="list-group-item list-group-item-action">
+                        GP Application (Port 3002)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Store bundle JSON data for JavaScript access -->
+<th:block th:each="req, iterStat : ${requests}">
+    <script th:inline="javascript" th:id="'bundleJson-' + ${iterStat.index}">
+        window['bundleJson_' + [[${iterStat.index}]]] = [[${req.bundleJson}]];
+    </script>
+</th:block>
+
+<!-- Request Detail Modal -->
+<div class="modal fade" id="requestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Source</h6>
+                        <p id="modalSource" class="mb-3">-</p>
+
+                        <h6 class="text-muted">Requester</h6>
+                        <p id="modalRequester" class="mb-3">-</p>
+
+                        <h6 class="text-muted">Patient</h6>
+                        <p id="modalPatient" class="mb-3">-</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Status</h6>
+                        <p id="modalStatus" class="mb-3">-</p>
+
+                        <h6 class="text-muted">Priority</h6>
+                        <p id="modalPriority" class="mb-3">-</p>
+
+                        <h6 class="text-muted">Received</h6>
+                        <p id="modalReceived" class="mb-3">-</p>
+                    </div>
+                </div>
+                <hr>
+                <h6 class="text-muted">Request Description</h6>
+                <div class="alert alert-light" id="modalDescription">-</div>
+
+                <!-- FHIR Bundle JSON -->
+                <div class="mt-4">
+                    <h6 class="text-muted d-flex justify-content-between align-items-center">
+                        <span>FHIR Message Bundle</span>
+                        <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#bundleCollapse">
+                            Toggle JSON
+                        </button>
+                    </h6>
+                    <div class="collapse" id="bundleCollapse">
+                        <pre id="modalBundleJson" class="bg-dark text-light p-3 rounded" style="max-height: 400px; overflow-y: auto; font-size: 0.75rem;"></pre>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a id="modalReplyBtn" href="#" class="btn btn-primary">Reply to Request</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-5 py-3 bg-white border-top">
+    <div class="container text-center text-muted small">
+        AT Messaging Implementation Guide - Proof of Concept
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Populate modal with row data
+    document.querySelectorAll('.request-row').forEach(row => {
+        row.addEventListener('click', function() {
+            document.getElementById('modalSource').textContent = this.dataset.source || '-';
+            document.getElementById('modalRequester').textContent = this.dataset.requester || '-';
+
+            let patientText = this.dataset.patient || '-';
+            if (this.dataset.patientdob) {
+                patientText += ' (Born: ' + this.dataset.patientdob + ')';
+            }
+            document.getElementById('modalPatient').textContent = patientText;
+
+            document.getElementById('modalStatus').textContent = this.dataset.status || '-';
+            document.getElementById('modalPriority').textContent = this.dataset.priority || '-';
+            document.getElementById('modalReceived').textContent = this.dataset.received || '-';
+            document.getElementById('modalDescription').textContent = this.dataset.description || 'No description provided';
+
+            // Load and display FHIR bundle JSON
+            const index = this.dataset.index;
+            const bundleJson = window['bundleJson_' + index];
+            const bundleElement = document.getElementById('modalBundleJson');
+            if (bundleJson) {
+                try {
+                    // Parse and pretty-print the JSON
+                    const parsed = typeof bundleJson === 'string' ? JSON.parse(bundleJson) : bundleJson;
+                    bundleElement.textContent = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    bundleElement.textContent = bundleJson;
+                }
+            } else {
+                bundleElement.textContent = 'Bundle JSON not available';
+            }
+
+            // Collapse the bundle section by default when opening modal
+            const collapseElement = document.getElementById('bundleCollapse');
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseElement, {toggle: false});
+            bsCollapse.hide();
+
+            // Update reply button href
+            document.getElementById('modalReplyBtn').href = '/requests/' + this.dataset.id + '/reply';
+        });
+    });
+</script>
+</body>
+</html>

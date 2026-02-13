@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Information System - AT Messaging PoC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .status-badge { font-size: 0.75rem; }
+        .patient-card { cursor: pointer; transition: transform 0.2s; }
+        .patient-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <strong>HIS</strong> - Hospital Information System
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <span th:if="${matrixConnected}" class="badge bg-success status-badge">Matrix Connected</span>
+                    <span th:unless="${matrixConnected}" class="badge bg-danger status-badge">Matrix Disconnected</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Alerts -->
+        <div th:if="${success}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <span th:text="${success}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <span th:text="${error}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <div class="row">
+            <!-- Patients Section -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">Patients</h5>
+                        <small class="text-muted">Select a patient to send a document</small>
+                    </div>
+                    <div class="card-body">
+                        <div th:if="${#lists.isEmpty(patients)}" class="text-center text-muted py-4">
+                            <p>No patients found. Waiting for FHIR server...</p>
+                        </div>
+                        <div class="row">
+                            <div th:each="patient : ${patients}" class="col-md-6 mb-3">
+                                <div class="card patient-card h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-1">
+                                            <span th:if="${patient.hasName() and !patient.name.isEmpty()}">
+                                                <span th:each="given : ${patient.name[0].given}" th:text="${given.value} + ' '"></span>
+                                                <span th:text="${patient.name[0].family}"></span>
+                                            </span>
+                                            <span th:unless="${patient.hasName() and !patient.name.isEmpty()}">Unknown</span>
+                                        </h6>
+                                        <p class="card-text small text-muted mb-2">
+                                            <span th:if="${patient.hasBirthDate()}">
+                                                Born: <span th:text="${patient.birthDateElement.valueAsString}"></span>
+                                            </span>
+                                            <br th:if="${patient.hasGender()}"/>
+                                            <span th:if="${patient.hasGender()}" th:text="'Gender: ' + ${patient.gender.display}"></span>
+                                        </p>
+                                        <a th:href="@{/documents/create(patientId=${patient.idElement.idPart})}"
+                                           class="btn btn-primary btn-sm">
+                                            Send Document
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info Section -->
+            <div class="col-lg-4">
+                <!-- Received Requests Card -->
+                <div class="card mb-3 border-info">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Received Requests</h6>
+                        <span th:if="${requestCount > 0}" class="badge bg-light text-info" th:text="${requestCount}">0</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            View CommunicationRequest messages received from the General Practitioner.
+                        </p>
+                        <a href="/requests" class="btn btn-info w-100 text-white">
+                            View Requests
+                            <span th:if="${requestCount > 0}" class="badge bg-light text-info ms-2" th:text="${requestCount}">0</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">AT Messaging PoC</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-2">
+                            This demo shows FHIR R5 message exchange between a Hospital Information System and
+                            a General Practitioner using the AT Messaging Implementation Guide.
+                        </p>
+                        <hr>
+                        <p class="small mb-1"><strong>Message Flow:</strong></p>
+                        <ol class="small text-muted ps-3 mb-0">
+                            <li>Select a patient</li>
+                            <li>Create a discharge summary</li>
+                            <li>Send via Matrix protocol</li>
+                            <li>View in GP application</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h6 class="mb-0">Quick Links</h6>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="http://localhost:3002" target="_blank" class="list-group-item list-group-item-action">
+                            GP Application (Port 3002)
+                        </a>
+                        <a href="http://localhost:8081/fhir/metadata" target="_blank"
+                           class="list-group-item list-group-item-action">
+                            HIS FHIR Server (Port 8081)
+                        </a>
+                        <a href="http://localhost:8082/fhir/metadata" target="_blank"
+                           class="list-group-item list-group-item-action">
+                            GP FHIR Server (Port 8082)
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sent Messages -->
+        <div class="card mt-4" th:if="${!#lists.isEmpty(sentMessages)}">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Sent Messages</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Timestamp</th>
+                                <th>Entries</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="bundle : ${sentMessages}">
+                                <td><code th:text="${bundle.idElement.idPart}"></code></td>
+                                <td th:text="${bundle.timestamp}"></td>
+                                <td th:text="${bundle.entry.size()}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="mt-5 py-3 bg-white border-top">
+        <div class="container text-center text-muted small">
+            AT Messaging Implementation Guide - Proof of Concept
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

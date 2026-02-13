@@ -1,0 +1,229 @@
+services:
+  # Matrix Synapse Server
+  matrix:
+    image: matrixdotorg/synapse:v1.145.0
+    container_name: matrix
+    ports:
+      - "8008:8008"
+    volumes:
+      - ./config/synapse:/data
+      - matrix-media:/data/media_store
+    environment:
+      - SYNAPSE_SERVER_NAME=matrix.local
+      - SYNAPSE_REPORT_STATS=no
+      - SYNAPSE_CONFIG_PATH=/data/homeserver.yaml
+    depends_on:
+      matrix-init:
+        condition: service_completed_successfully
+      matrix-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - messaging-net
+
+  # Matrix initialization - generates signing key if not present
+  matrix-init:
+    image: matrixdotorg/synapse:v1.145.0
+    container_name: matrix-init
+    volumes:
+      - ./config/synapse:/data
+      - matrix-media:/data/media_store
+    environment:
+      - SYNAPSE_SERVER_NAME=matrix.local
+      - SYNAPSE_REPORT_STATS=no
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /data/matrix.local.signing.key ]; then
+          echo "Generating signing key..."
+          python -m synapse.app.homeserver --generate-keys --config-path /data/homeserver.yaml
+        else
+          echo "Signing key already exists"
+        fi
+        echo "Setting permissions for synapse user (991:991)..."
+        chown -R 991:991 /data
+        echo "Setting permissions for media_store..."
+        chown -R 991:991 /data/media_store
+    networks:
+      - messaging-net
+
+  matrix-db:
+    image: postgres:15-alpine
+    container_name: matrix-db
+    environment:
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: synapse
+      POSTGRES_DB: synapse
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - matrix-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-net
+
+  # Hospital Information System
+  his-app:
+    build:
+      context: ./his-app
+      dockerfile: Dockerfile
+    container_name: his-app
+    ports:
+      - "3001:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - FHIR_SERVER_URL=http://his-fhir:8080/fhir
+      - MATRIX_SERVER_URL=http://matrix:8008
+      - MATRIX_USERNAME=his_user
+      - MATRIX_PASSWORD=his_password
+      - MATRIX_ROOM_ALIAS=messaging
+    depends_on:
+      his-fhir:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - messaging-net
+
+  his-fhir:
+    build:
+      context: ./hapi-fhir
+      dockerfile: Dockerfile
+    container_name: his-fhir
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./config/his-fhir/application.yaml:/app/config/application.yaml:ro
+    depends_on:
+      his-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/wget", "--spider", "--quiet", "http://localhost:8080/fhir/metadata"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    networks:
+      - messaging-net
+
+  his-db:
+    image: postgres:15-alpine
+    container_name: his-db
+    environment:
+      POSTGRES_USER: hapi
+      POSTGRES_PASSWORD: hapi
+      POSTGRES_DB: hapi
+    volumes:
+      - his-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-net
+
+  # General Practitioner System
+  gp-app:
+    build:
+      context: ./gp-app
+      dockerfile: Dockerfile
+    container_name: gp-app
+    ports:
+      - "3002:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - FHIR_SERVER_URL=http://gp-fhir:8080/fhir
+      - MATRIX_SERVER_URL=http://matrix:8008
+      - MATRIX_USERNAME=gp_user
+      - MATRIX_PASSWORD=gp_password
+      - MATRIX_ROOM_ALIAS=messaging
+    depends_on:
+      gp-fhir:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - messaging-net
+
+  gp-fhir:
+    build:
+      context: ./hapi-fhir
+      dockerfile: Dockerfile
+    container_name: gp-fhir
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./config/gp-fhir/application.yaml:/app/config/application.yaml:ro
+    depends_on:
+      gp-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/wget", "--spider", "--quiet", "http://localhost:8080/fhir/metadata"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    networks:
+      - messaging-net
+
+  gp-db:
+    image: postgres:15-alpine
+    container_name: gp-db
+    environment:
+      POSTGRES_USER: hapi
+      POSTGRES_PASSWORD: hapi
+      POSTGRES_DB: hapi
+    volumes:
+      - gp-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hapi"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - messaging-net
+
+  # One-time setup service - registers Matrix users and creates room
+  setup:
+    build:
+      context: ./setup
+      dockerfile: Dockerfile
+    container_name: setup
+    environment:
+      - MATRIX_SERVER_URL=http://matrix:8008
+    depends_on:
+      matrix:
+        condition: service_healthy
+    networks:
+      - messaging-net
+
+networks:
+  messaging-net:
+    driver: bridge
+
+volumes:
+  matrix-media:
+  matrix-db-data:
+  his-db-data:
+  gp-db-data:

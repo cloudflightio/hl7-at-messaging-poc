@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: his-app
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# FHIR Server Configuration
+fhir:
+  server:
+    url: ${FHIR_SERVER_URL:http://localhost:8081/fhir}
+
+# Matrix Configuration
+matrix:
+  server:
+    url: ${MATRIX_SERVER_URL:http://localhost:8008}
+  username: ${MATRIX_USERNAME:his_user}
+  password: ${MATRIX_PASSWORD:his_password}
+  room:
+    alias: ${MATRIX_ROOM_ALIAS:messaging}
+
+# HIS Endpoint Configuration
+his:
+  endpoint:
+    name: "Hospital Information System"
+    address: "matrix:@his_user:matrix.local"
+
+# GP Endpoint Configuration
+gp:
+  endpoint:
+    name: "General Practitioner - Dr. Huber"
+    address: "matrix:@gp_user:matrix.local"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    at.hl7.fhir.poc: DEBUG
+    ca.uhn.fhir: INFO

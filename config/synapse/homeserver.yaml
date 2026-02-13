@@ -1,0 +1,74 @@
+server_name: "matrix.local"
+pid_file: /data/homeserver.pid
+
+listeners:
+  - port: 8008
+    tls: false
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  args:
+    user: synapse
+    password: synapse
+    database: synapse
+    host: matrix-db
+    cp_min: 5
+    cp_max: 10
+
+log_config: "/data/matrix.local.log.config"
+
+media_store_path: /data/media_store
+uploads_path: /data/uploads
+
+# Registration settings - allow registration for setup
+enable_registration: true
+enable_registration_without_verification: true
+
+# Disable federation for isolated PoC
+federation_domain_whitelist: []
+
+# Disable rate limiting for PoC
+rc_message:
+  per_second: 1000
+  burst_count: 1000
+
+rc_registration:
+  per_second: 1000
+  burst_count: 1000
+
+rc_login:
+  address:
+    per_second: 1000
+    burst_count: 1000
+  account:
+    per_second: 1000
+    burst_count: 1000
+  failed_attempts:
+    per_second: 1000
+    burst_count: 1000
+
+# Signing key (will be generated on first run)
+signing_key_path: "/data/matrix.local.signing.key"
+
+# Trusted key servers (empty for isolated setup)
+trusted_key_servers: []
+
+# Suppress key server warning
+suppress_key_server_warning: true
+
+# Report stats
+report_stats: false
+
+# Max upload size
+max_upload_size: 50M
+
+# URL preview (disabled)
+url_preview_enabled: false
+
+macaroon_secret_key: "poc-secret-key-change-in-production"
+form_secret: "poc-form-secret-change-in-production"

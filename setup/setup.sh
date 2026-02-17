@@ -2,6 +2,7 @@
 set -e
 
 MATRIX_SERVER="${MATRIX_SERVER_URL:-http://matrix:8008}"
+MATRIX_SERVER_NAME="${MATRIX_SERVER_NAME:-matrix.local}"
 
 echo "Waiting for Matrix server to be ready..."
 until curl -sf "${MATRIX_SERVER}/health" > /dev/null 2>&1; do
@@ -98,7 +99,7 @@ if echo "$ROOM_RESPONSE" | grep -q "room_id"; then
     echo "Room created: ${ROOM_ID}"
 else
     echo "Room may already exist, looking up..."
-    ROOM_ID=$(curl -sf "${MATRIX_SERVER}/_matrix/client/v3/directory/room/%23messaging:matrix.local" \
+    ROOM_ID=$(curl -sf "${MATRIX_SERVER}/_matrix/client/v3/directory/room/%23messaging:${MATRIX_SERVER_NAME}" \
         -H "Authorization: Bearer ${HIS_TOKEN}" | jq -r '.room_id' 2>/dev/null || echo "")
     if [ -n "$ROOM_ID" ] && [ "$ROOM_ID" != "null" ]; then
         echo "Found existing room: ${ROOM_ID}"
@@ -120,9 +121,9 @@ fi
 echo ""
 echo "========================================="
 echo "Matrix setup complete!"
-echo "HIS User: @his_user:matrix.local"
-echo "GP User: @gp_user:matrix.local"
-echo "Room: #messaging:matrix.local"
+echo "HIS User: @his_user:${MATRIX_SERVER_NAME}"
+echo "GP User: @gp_user:${MATRIX_SERVER_NAME}"
+echo "Room: #messaging:${MATRIX_SERVER_NAME}"
 if [ -n "$ROOM_ID" ]; then
     echo "Room ID: ${ROOM_ID}"
 fi

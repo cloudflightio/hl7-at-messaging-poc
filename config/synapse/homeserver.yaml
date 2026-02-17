@@ -32,6 +32,14 @@ enable_registration_without_verification: true
 # Disable federation for isolated PoC
 federation_domain_whitelist: []
 
+# Allow viewing the public room directory
+allow_public_rooms_without_auth: true
+allow_public_rooms_over_federation: false
+
+# Auto-join new users to the messaging room
+auto_join_rooms:
+  - "#messaging:matrix.local"
+
 # Disable rate limiting for PoC
 rc_message:
   per_second: 1000

@@ -18,6 +18,7 @@ fhir:
 matrix:
   server:
     url: ${MATRIX_SERVER_URL:http://localhost:8008}
+    name: ${MATRIX_SERVER_NAME:matrix.local}
   username: ${MATRIX_USERNAME:gp_user}
   password: ${MATRIX_PASSWORD:gp_password}
   room:
@@ -27,13 +28,13 @@ matrix:
 gp:
   endpoint:
     name: "General Practitioner - Dr. Huber"
-    address: "matrix:@gp_user:matrix.local"
+    address: "matrix:@gp_user:${MATRIX_SERVER_NAME:matrix.local}"
 
 # HIS Endpoint Configuration
 his:
   endpoint:
     name: "Hospital Information System"
-    address: "matrix:@his_user:matrix.local"
+    address: "matrix:@his_user:${MATRIX_SERVER_NAME:matrix.local}"
 
 management:
   endpoints:

@@ -30,7 +30,7 @@ Messages are transported via **Matrix protocol** following the ATMessagingBundle
 │  ┌─────────────────┐                         ┌─────────────────┐        │
 │  │  HIS App        │                         │  GP App         │        │
 │  │  (Spring Boot)  │                         │  (Spring Boot)  │        │
-│  │  Port 3001      │◄───── Browser ─────────►│  Port 3002      │        │
+│  │  Port 3001      │                         │  Port 3002      │        │
 │  └────────┬────────┘                         └────────┬────────┘        │
 │           │                                           │                 │
 │  ┌────────▼────────┐                         ┌────────▼────────┐        │

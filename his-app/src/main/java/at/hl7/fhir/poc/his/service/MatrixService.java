@@ -31,6 +31,9 @@ public class MatrixService {
     @Value("${matrix.room.alias:messaging}")
     private String roomAlias;
 
+    @Value("${matrix.server.name:matrix.local}")
+    private String matrixServerName;
+
     private WebClient webClient;
     private String accessToken;
     private String roomId;
@@ -98,7 +101,7 @@ public class MatrixService {
         try {
             String response = webClient.get()
                     .uri("/_matrix/client/v3/directory/room/{alias}",
-                            "#" + roomAlias + ":matrix.local")
+                            "#" + roomAlias + ":" + matrixServerName)
                     .header("Authorization", "Bearer " + accessToken)
                     .retrieve()
                     .bodyToMono(String.class)
